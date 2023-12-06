@@ -1,10 +1,9 @@
 use std::{cmp, fs};
 
 fn parse(line: &str) -> [u32; 3] {
-    let split = line.split_once(": ").unwrap();
+    let (_, balls) = line.split_once(": ").unwrap();
     let mut colors = [0, 0, 0]; // R, G, B
-    split
-        .1
+    balls
         .split("; ")
         .flat_map(|hand| hand.split(", "))
         .for_each(|hand| {
@@ -28,7 +27,7 @@ pub fn run(filename: &str) -> u32 {
         .split("\n")
         .filter(|line| !line.is_empty())
         .map(parse)
-        .map(|total| total[0] * total[1] * total[2])
+        .map(|total| total.iter().product::<u32>())
         .sum()
 }
 

@@ -1,11 +1,10 @@
 use std::{cmp, fs};
 
 fn parse(line: &str) -> [u32; 4] {
-    let split = line.split_once(": ").unwrap();
+    let (game, balls) = line.split_once(": ").unwrap();
     let mut colors = [0, 0, 0, 0]; // id, R, G, B
-    colors[0] = split.0.split_once(" ").unwrap().1.parse().unwrap();
-    split
-        .1
+    colors[0] = game.split_once(" ").unwrap().1.parse().unwrap();
+    balls
         .split("; ")
         .flat_map(|hand| hand.split(", "))
         .for_each(|hand| {
@@ -16,7 +15,7 @@ fn parse(line: &str) -> [u32; 4] {
                 "red" => 1,
                 "green" => 2,
                 "blue" => 3,
-                _ => panic!("WTF is {} ??", color),
+                _ => panic!("WTF is {}?", color),
             };
             colors[index] = cmp::max(colors[index], count);
         });

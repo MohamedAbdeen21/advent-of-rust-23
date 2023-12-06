@@ -56,7 +56,7 @@ mod tests {
     use super::*;
     #[test]
     fn it_works() {
-        let sample = "./src/sample.txt";
+        let sample = "./src/sample2.txt";
         assert_eq!(run(sample), 281);
     }
 }

@@ -1,17 +1,15 @@
 use std::{collections::HashSet, fs};
 
 fn parse_line(line: &str) -> usize {
-    let card = line.split_once("|").unwrap();
-    let winning = card
-        .0
+    let (winning, hand) = line.split_once("|").unwrap();
+    let winning = winning
         .split_once(": ")
         .unwrap()
         .1
         .split_whitespace()
         .map(|num| num.parse().unwrap())
         .collect::<HashSet<u32>>();
-    let hand = card
-        .1
+    let hand = hand
         .split_whitespace()
         .map(|num| num.parse().unwrap())
         .collect::<HashSet<u32>>();
@@ -27,9 +25,9 @@ pub fn run(filename: &str) -> u32 {
     let mut cards: Vec<u32> = vec![0; n];
     lines.map(parse_line).enumerate().for_each(|(i, l)| {
         cards[i] += 1;
-        for j in i + 1..=i + l {
+        (i + 1..=i + l).for_each(|j| {
             cards[j] += cards[i];
-        }
+        })
     });
     cards.iter().sum()
 }
