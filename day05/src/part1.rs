@@ -45,11 +45,8 @@ fn apply_mapping(inputs: Vec<u64>, mapping: Vec<Range>) -> Vec<u64> {
 
 pub fn run(filename: &str) -> u64 {
     let input = fs::read_to_string(filename).unwrap();
-    let sections = input.split("\n\n");
-    let seeds: Vec<u64> = sections
-        .clone()
-        .nth(0)
-        .unwrap()
+    let (seeds, mappings) = input.split_once("\n\n").unwrap();
+    let seeds: Vec<u64> = seeds
         .split_once(": ")
         .unwrap()
         .1
@@ -57,8 +54,8 @@ pub fn run(filename: &str) -> u64 {
         .map(|seed| seed.parse().unwrap())
         .collect();
 
-    *sections
-        .skip(1)
+    *mappings
+        .split("\n\n")
         .map(|mapping| parse_ranges(mapping))
         .fold(seeds, |input, mapping| apply_mapping(input, mapping))
         .iter()

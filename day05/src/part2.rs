@@ -70,10 +70,8 @@ fn parse_ranges(block: &str) -> Vec<Range> {
 }
 
 fn parse(input: String) -> (Vec<Range>, Vec<Vec<Range>>) {
-    let seeds: Vec<Range> = input
-        .split("\n\n")
-        .nth(0)
-        .unwrap()
+    let (seeds, mappings) = input.split_once("\n\n").unwrap();
+    let seeds: Vec<Range> = seeds
         .split_once(": ")
         .unwrap()
         .1
@@ -84,9 +82,8 @@ fn parse(input: String) -> (Vec<Range>, Vec<Vec<Range>>) {
         .map(|pair| Range::new(pair[0], pair[0] + pair[1], 0))
         .collect();
 
-    let maps = input
+    let maps = mappings
         .split("\n\n")
-        .skip(1)
         .map(|block| parse_ranges(block))
         .collect::<Vec<Vec<Range>>>();
 
