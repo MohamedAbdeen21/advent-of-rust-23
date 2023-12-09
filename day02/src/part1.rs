@@ -8,16 +8,14 @@ fn parse(line: &str) -> [u32; 4] {
         .split("; ")
         .flat_map(|hand| hand.split(", "))
         .for_each(|hand| {
-            let split = hand.split_once(" ").unwrap();
-            let count = split.0.parse::<u32>().unwrap();
-            let color = split.1;
+            let (count, color) = hand.split_once(" ").unwrap();
             let index = match color {
                 "red" => 1,
                 "green" => 2,
                 "blue" => 3,
-                _ => panic!("WTF is {}?", color),
+                _ => panic!("What is {}?", color),
             };
-            colors[index] = cmp::max(colors[index], count);
+            colors[index] = cmp::max(colors[index], count.parse().unwrap());
         });
     return colors;
 }
@@ -29,7 +27,7 @@ pub fn run(filename: &str) -> u32 {
         .filter(|&line| line != "")
         .map(parse)
         .filter(|round| round[1] <= 12 && round[2] <= 13 && round[3] <= 14)
-        .map(|round| round[0] as u32)
+        .map(|round| round[0])
         .sum()
 }
 

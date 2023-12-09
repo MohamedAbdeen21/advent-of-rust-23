@@ -19,7 +19,7 @@ pub fn run(filename: &str) -> u32 {
                     .unwrap(),
             )
         })
-        .map(|x| x.0 * 10 + x.1)
+        .map(|(first, last)| first * 10 + last)
         .sum()
 }
 

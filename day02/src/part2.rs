@@ -7,16 +7,14 @@ fn parse(line: &str) -> [u32; 3] {
         .split("; ")
         .flat_map(|hand| hand.split(", "))
         .for_each(|hand| {
-            let split = hand.split_once(" ").unwrap();
-            let count = split.0.parse::<u32>().unwrap();
-            let color = split.1;
+            let (count, color) = hand.split_once(" ").unwrap();
             let index = match color {
                 "red" => 0,
                 "green" => 1,
                 "blue" => 2,
-                _ => panic!("WTF is {} ??", color),
+                _ => panic!("What is {}?", color),
             };
-            colors[index] = cmp::max(colors[index], count);
+            colors[index] = cmp::max(colors[index], count.parse().unwrap());
         });
     return colors;
 }
