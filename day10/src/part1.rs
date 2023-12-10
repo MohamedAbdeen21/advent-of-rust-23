@@ -3,10 +3,10 @@ use std::fs;
 #[derive(PartialEq, Copy, Clone)]
 enum Direction {
     None,
-    North,
-    East,
-    West,
-    South,
+    Up,
+    Right,
+    Left,
+    Down,
 }
 
 #[derive(PartialEq)]
@@ -39,32 +39,32 @@ impl Pipe {
                 ..Default::default()
             },
             'L' => Pipe {
-                ends: [Direction::East, Direction::North],
+                ends: [Direction::Right, Direction::Up],
                 pos,
                 ..Default::default()
             },
             'F' => Pipe {
-                ends: [Direction::East, Direction::South],
+                ends: [Direction::Right, Direction::Down],
                 pos,
                 ..Default::default()
             },
             '-' => Pipe {
-                ends: [Direction::East, Direction::West],
+                ends: [Direction::Right, Direction::Left],
                 pos,
                 ..Default::default()
             },
             '|' => Pipe {
-                ends: [Direction::North, Direction::South],
+                ends: [Direction::Up, Direction::Down],
                 pos,
                 ..Default::default()
             },
             'J' => Pipe {
-                ends: [Direction::North, Direction::West],
+                ends: [Direction::Up, Direction::Left],
                 pos,
                 ..Default::default()
             },
             '7' => Pipe {
-                ends: [Direction::South, Direction::West],
+                ends: [Direction::Down, Direction::Left],
                 pos,
                 ..Default::default()
             },
@@ -77,22 +77,19 @@ impl Pipe {
 }
 
 fn fill_pipe(matrix: &mut Vec<Vec<Pipe>>, i: usize, j: usize, from: Direction) -> bool {
-    if i >= matrix.len() || j >= matrix[0].len() {
+    if i >= matrix.len() || j >= matrix[0].len() || !matrix[i][j].ends.contains(&from) {
         return false;
     }
     let pipe = &matrix[i][j];
     if pipe.start {
         return true;
     }
-    if !pipe.ends.contains(&from) {
-        return false;
-    }
     let next = *pipe.ends.iter().find(|&&d| d != from).unwrap();
     matrix[i][j].is_loop = match next {
-        Direction::North => fill_pipe(matrix, i - 1, j, Direction::South),
-        Direction::South => fill_pipe(matrix, i + 1, j, Direction::North),
-        Direction::East => fill_pipe(matrix, i, j + 1, Direction::West),
-        Direction::West => fill_pipe(matrix, i, j - 1, Direction::East),
+        Direction::Up => fill_pipe(matrix, i - 1, j, Direction::Down),
+        Direction::Down => fill_pipe(matrix, i + 1, j, Direction::Up),
+        Direction::Right => fill_pipe(matrix, i, j + 1, Direction::Left),
+        Direction::Left => fill_pipe(matrix, i, j - 1, Direction::Right),
         _ => false,
     };
     return matrix[i][j].is_loop;
@@ -115,10 +112,10 @@ pub fn run(filename: &str) -> u32 {
     let (i, j) = matrix.iter().flatten().find(|pipe| pipe.start).unwrap().pos;
 
     // I hate usize
-    fill_pipe(&mut matrix, i.wrapping_sub(1), j, Direction::South);
-    fill_pipe(&mut matrix, i, j.wrapping_sub(1), Direction::East);
-    fill_pipe(&mut matrix, i, j + 1, Direction::West);
-    fill_pipe(&mut matrix, i + 1, j, Direction::North);
+    fill_pipe(&mut matrix, i.wrapping_sub(1), j, Direction::Down);
+    fill_pipe(&mut matrix, i, j.wrapping_sub(1), Direction::Right);
+    fill_pipe(&mut matrix, i, j + 1, Direction::Left);
+    fill_pipe(&mut matrix, i + 1, j, Direction::Up);
 
     matrix.iter().flatten().filter(|pipe| pipe.is_loop).count() as u32 / 2
 }
