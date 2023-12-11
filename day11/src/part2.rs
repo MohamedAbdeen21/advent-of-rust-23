@@ -12,12 +12,14 @@ fn expand(matrix: &Vec<Vec<char>>) -> Vec<usize> {
         .iter()
         .enumerate()
         .filter(|(_, row)| row.iter().all(|&c| c == '.'))
-        .map(|(i, _)| i)
+        .map(|(i, _)| i) // can also unzip
         .collect()
 }
 
-fn calculate_distance(g1: &(usize, usize, &char), g2: &(usize, usize, &char)) -> u64 {
-    (g1.0.abs_diff(g2.0) + g1.1.abs_diff(g2.1)) as u64
+fn calculate_distance(g1: (usize, usize, char), g2: (usize, usize, char)) -> u64 {
+    let (x1, y1, _) = g1;
+    let (x2, y2, _) = g2;
+    (x1.abs_diff(x2) + y1.abs_diff(y2)) as u64
 }
 
 pub fn run(filename: &str) -> u64 {
@@ -30,11 +32,12 @@ pub fn run(filename: &str) -> u64 {
     let expanded_rows = expand(&matrix);
     let expanded_cols = expand(&transpose(&matrix));
 
-    let galaxies: Vec<(usize, usize, &char)> = matrix
+    let galaxies: Vec<(usize, usize, char)> = matrix
         .iter()
         .enumerate()
         .map(|(i, row)| {
             row.iter()
+                .cloned()
                 .enumerate()
                 .map(|(j, cell)| {
                     let a = expanded_rows
@@ -49,16 +52,16 @@ pub fn run(filename: &str) -> u64 {
                         * (1_000_000 - 1);
                     (a + i, b + j, cell)
                 })
-                .collect::<Vec<(usize, usize, &char)>>()
+                .collect::<Vec<(usize, usize, char)>>()
         })
         .flatten()
-        .filter(|&(_, _, &cell)| cell == '#')
+        .filter(|&(_, _, cell)| cell == '#')
         .collect();
 
     galaxies
         .iter()
         .combinations(2)
-        .map(|pair| calculate_distance(pair[0], pair[1]))
+        .map(|pair| calculate_distance(*pair[0], *pair[1]))
         .sum()
 }
 

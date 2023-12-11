@@ -1,27 +1,29 @@
 use itertools::Itertools;
 use std::fs;
 
-fn transpose(matrix: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+fn transpose(matrix: Vec<Vec<char>>) -> Vec<Vec<char>> {
     (0..matrix[0].len())
         .map(|i| matrix.iter().map(|inner| inner[i].clone()).collect())
         .collect()
 }
 
-fn expand(matrix: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+fn expand(matrix: Vec<Vec<char>>) -> Vec<Vec<char>> {
     matrix
         .iter()
         .flat_map(|row| {
             if row.iter().all(|&c| c == '.') {
-                return vec![row; 2];
+                return Vec::from([row; 2]);
             }
-            return vec![row];
+            return Vec::from([row]);
         })
         .cloned()
         .collect::<Vec<Vec<char>>>()
 }
 
-fn calculate_distance(g1: &(usize, usize, &char), g2: &(usize, usize, &char)) -> u64 {
-    (g1.0.abs_diff(g2.0) + g1.1.abs_diff(g2.1)) as u64
+fn calculate_distance(g1: (usize, usize, char), g2: (usize, usize, char)) -> u64 {
+    let (x1, y1, _) = g1;
+    let (x2, y2, _) = g2;
+    (x1.abs_diff(x2) + y1.abs_diff(y2)) as u64
 }
 
 pub fn run(filename: &str) -> u64 {
@@ -31,34 +33,27 @@ pub fn run(filename: &str) -> u64 {
         .map(|line| line.chars().collect::<Vec<char>>())
         .collect();
 
-    let matrix = expand(&matrix);
-    let matrix = expand(&transpose(&matrix));
+    let matrix = expand(transpose(expand(matrix)));
 
-    let galaxies: Vec<(usize, usize, &char)> = matrix
+    let galaxies: Vec<(usize, usize, char)> = matrix
         .iter()
         .enumerate()
         .map(|(i, row)| {
             row.iter()
+                .cloned()
                 .enumerate()
                 .map(|(j, cell)| (i, j, cell))
-                .collect::<Vec<(usize, usize, &char)>>()
+                .collect::<Vec<(usize, usize, char)>>()
         })
         .flatten()
-        .filter(|&(_, _, &cell)| cell == '#')
+        .filter(|&(_, _, cell)| cell == '#')
         .collect();
 
     galaxies
         .iter()
         .combinations(2)
-        .map(|pair| calculate_distance(pair[0], pair[1]))
+        .map(|pair| calculate_distance(*pair[0], *pair[1]))
         .sum()
-
-    // for row in &matrix {
-    //     for cell in row {
-    //         print!("{}", cell)
-    //     }
-    //     println!()
-    // }
 }
 
 #[cfg(test)]
