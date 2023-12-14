@@ -5,3 +5,12 @@ version = 3
 [[package]]
 name = "day14"
 version = "0.1.0"
+dependencies = [
+ "hashvec",
+]
+
+[[package]]
+name = "hashvec"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87d67718f24f83c3e0ddc7fe062e1c001f8eb07e54700f20d9b3947b060eae6e"

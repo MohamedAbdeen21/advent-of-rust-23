@@ -17,7 +17,6 @@ fn sum_row(row: &Vec<char>) -> usize {
         .rev()
         .enumerate()
         .map(|(i, v)| v * (i + 1))
-        .rev()
         .sum()
 }
 
