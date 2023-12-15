@@ -11,10 +11,9 @@ impl Bucket {
 
     fn push(&mut self, k: String, v: u64) {
         if let Some(idx) = self.mem.iter().position(|(key, _)| key == &k) {
-            self.mem[idx] = (k, v)
-        } else {
-            self.mem.push((k, v))
+            return self.mem[idx] = (k, v);
         }
+        self.mem.push((k, v));
     }
 
     fn pop(&mut self, k: String) {
@@ -23,7 +22,7 @@ impl Bucket {
         }
     }
 
-    fn power(&self, idx: u64) -> u64 {
+    fn reflection_power(&self, idx: u64) -> u64 {
         self.mem
             .iter()
             .enumerate()
@@ -51,18 +50,17 @@ pub fn run(filename: &str) -> u64 {
         });
 
         let operation: String = seq.chars().skip_while(|&c| c != '=' && c != '-').collect();
-
-        if &operation[0..1] == "=" {
-            values[hash as usize].push(key, operation[1..].parse().unwrap())
-        } else if &operation[0..1] == "-" {
-            values[hash as usize].pop(key);
+        match &operation[0..1] {
+            "=" => values[hash as usize].push(key, operation[1..].parse().unwrap()),
+            "-" => values[hash as usize].pop(key),
+            _ => panic!("Shouldn't happen"),
         };
     });
 
     return values
         .iter()
         .enumerate()
-        .map(|(i, bucket)| bucket.power(i as u64))
+        .map(|(i, bucket)| bucket.reflection_power(i as u64))
         .sum();
 }
 
