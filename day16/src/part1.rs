@@ -6,44 +6,34 @@ fn trace(
     i: usize,
     j: usize,
     dir: (isize, isize),
-    memo: &mut HashSet<(usize, usize, isize, isize)>,
+    seen: &mut HashSet<(usize, usize, isize, isize)>,
 ) {
-    if memo.contains(&(i, j, dir.0, dir.1)) {
+    if seen.contains(&(i, j, dir.0, dir.1)) {
         return;
     }
+
     let (mut i, mut j) = (i, j);
     loop {
         energized[i][j] = '#';
-        if i == 0 && dir.0 == -1
-            || j == 0 && dir.1 == -1
-            || i == grid.len() - 1 && dir.0 == 1
-            || j == grid[0].len() - 1 && dir.1 == 1
-        {
+        seen.insert((i, j, dir.0, dir.1));
+
+        // We only expect it to underflow, not overflow
+        (i, j) = (i.wrapping_add_signed(dir.0), j.wrapping_add_signed(dir.1));
+
+        if i >= grid.len() || j >= grid[0].len() {
             break;
         }
-        memo.insert((i, j, dir.0, dir.1));
 
-        (i, j) = (
-            i.checked_add_signed(dir.0).unwrap(),
-            j.checked_add_signed(dir.1).unwrap(),
-        );
-
-        match grid[i][j] {
-            '\\' => break trace(grid, energized, i, j, (dir.1, dir.0), memo),
-            '/' => break trace(grid, energized, i, j, (-dir.1, -dir.0), memo),
-            '-' => {
-                if dir.0 != 0 {
-                    trace(grid, energized, i, j, (0, 1), memo);
-                    trace(grid, energized, i, j, (0, -1), memo);
-                    break;
-                }
+        match (grid[i][j], dir.0, dir.1) {
+            ('\\', _, _) => break trace(grid, energized, i, j, (dir.1, dir.0), seen),
+            ('/', _, _) => break trace(grid, energized, i, j, (-dir.1, -dir.0), seen),
+            ('-', _, 0) => {
+                trace(grid, energized, i, j, (0, 1), seen);
+                break trace(grid, energized, i, j, (0, -1), seen);
             }
-            '|' => {
-                if dir.1 != 0 {
-                    trace(grid, energized, i, j, (1, 0), memo);
-                    trace(grid, energized, i, j, (-1, 0), memo);
-                    break;
-                }
+            ('|', 0, _) => {
+                trace(grid, energized, i, j, (1, 0), seen);
+                break trace(grid, energized, i, j, (-1, 0), seen);
             }
             _ => (),
         }
@@ -59,7 +49,7 @@ pub fn run(filename: &str) -> u64 {
     let mut memo = HashSet::new();
     let mut energized = grid.clone();
 
-    // i HATE usize
+    // i HATE usize, now we have to process first cell separately
     let dir = match grid[0][0] {
         '\\' | '|' => (1, 0),
         '/' => (-1, 0),
@@ -67,14 +57,6 @@ pub fn run(filename: &str) -> u64 {
     };
 
     trace(&grid, &mut energized, 0, 0, dir, &mut memo);
-
-    // for row in energized.iter() {
-    //     for c in row {
-    //         print!("{c}")
-    //     }
-    //     println!()
-    // }
-    // println!();
 
     energized.iter().flatten().filter(|&&c| c == '#').count() as u64
 }
@@ -89,3 +71,4 @@ mod tests {
         assert_eq!(run(input), 46);
     }
 }
+
