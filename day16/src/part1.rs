@@ -2,7 +2,6 @@ use std::{collections::HashSet, fs};
 
 fn trace(
     grid: &Vec<Vec<char>>,
-    energized: &mut Vec<Vec<char>>,
     i: usize,
     j: usize,
     dir: (isize, isize),
@@ -14,7 +13,6 @@ fn trace(
 
     let (mut i, mut j) = (i, j);
     loop {
-        energized[i][j] = '#';
         seen.insert((i, j, dir.0, dir.1));
 
         // We only expect it to underflow, not overflow
@@ -25,15 +23,15 @@ fn trace(
         }
 
         match (grid[i][j], dir.0, dir.1) {
-            ('\\', _, _) => break trace(grid, energized, i, j, (dir.1, dir.0), seen),
-            ('/', _, _) => break trace(grid, energized, i, j, (-dir.1, -dir.0), seen),
+            ('\\', _, _) => break trace(grid, i, j, (dir.1, dir.0), seen),
+            ('/', _, _) => break trace(grid, i, j, (-dir.1, -dir.0), seen),
             ('-', _, 0) => {
-                trace(grid, energized, i, j, (0, 1), seen);
-                break trace(grid, energized, i, j, (0, -1), seen);
+                trace(grid, i, j, (0, 1), seen);
+                break trace(grid, i, j, (0, -1), seen);
             }
             ('|', 0, _) => {
-                trace(grid, energized, i, j, (1, 0), seen);
-                break trace(grid, energized, i, j, (-1, 0), seen);
+                trace(grid, i, j, (1, 0), seen);
+                break trace(grid, i, j, (-1, 0), seen);
             }
             _ => (),
         }
@@ -46,8 +44,7 @@ pub fn run(filename: &str) -> u64 {
         .split_terminator("\n")
         .map(|row| row.chars().collect::<Vec<char>>())
         .collect();
-    let mut memo = HashSet::new();
-    let mut energized = grid.clone();
+    let mut seen = HashSet::new();
 
     // i HATE usize, now we have to process first cell separately
     let dir = match grid[0][0] {
@@ -56,9 +53,12 @@ pub fn run(filename: &str) -> u64 {
         _ => (0, 1),
     };
 
-    trace(&grid, &mut energized, 0, 0, dir, &mut memo);
+    trace(&grid, 0, 0, dir, &mut seen);
 
-    energized.iter().flatten().filter(|&&c| c == '#').count() as u64
+    seen.iter()
+        .map(|tuple| (tuple.0, tuple.1))
+        .collect::<HashSet<(usize, usize)>>()
+        .len() as u64
 }
 
 #[cfg(test)]
@@ -71,4 +71,3 @@ mod tests {
         assert_eq!(run(input), 46);
     }
 }
-

@@ -5,42 +5,73 @@ use std::{
 };
 
 // should use struct to manage state (position and turns)
+#[derive(Eq, PartialEq, Hash, Clone)]
+struct Step {
+    x: usize,
+    y: usize,
+    direction: (isize, isize),
+}
 
-fn traverse(grid: &Vec<Vec<char>>, s: (isize, isize, isize, isize)) -> u64 {
-    let mut queue: VecDeque<(isize, isize, isize, isize)> = VecDeque::new();
-    let mut seen: HashSet<(isize, isize, isize, isize)> = HashSet::new();
+impl Step {
+    fn new(x: usize, y: usize, dx: isize, dy: isize) -> Step {
+        Step {
+            x,
+            y,
+            direction: (dx, dy),
+        }
+    }
+}
+
+fn traverse(grid: &Vec<Vec<char>>, s: Step) -> u64 {
+    let mut queue: VecDeque<Step> = VecDeque::new();
+    let mut seen: HashSet<Step> = HashSet::new();
     queue.push_back(s);
 
     while !queue.is_empty() {
         let head = queue.pop_front().unwrap();
-        let x = head.0 as usize;
-        let y = head.1 as usize;
-        let (dx, dy) = (head.2, head.3);
-        if head.0 < 0 || head.1 < 0 || x >= grid.len() || y >= grid[0].len() {
+        let (x, y) = (head.x, head.y);
+        let (dx, dy) = head.direction;
+        if x >= grid.len() || y >= grid[0].len() {
             continue;
         }
         if seen.contains(&head) {
             continue;
         }
-        seen.insert(head);
+        seen.insert(head.clone());
 
         match (grid[x][y], dx, dy) {
+            ('/', _, _) => queue.push_back(Step::new(
+                x.wrapping_add_signed(-dy),
+                y.wrapping_add_signed(-dx),
+                -dy,
+                -dx,
+            )),
+            ('\\', _, _) => queue.push_back(Step::new(
+                x.wrapping_add_signed(dy),
+                y.wrapping_add_signed(dx),
+                dy,
+                dx,
+            )),
             ('|', 0, _) => {
-                queue.push_back((head.0 - 1, head.1, -1, 0));
-                queue.push_back((head.0 + 1, head.1, 1, 0));
+                queue.push_back(Step::new(x.wrapping_add_signed(-1), head.y, -1, 0));
+                queue.push_back(Step::new(head.x + 1, head.y, 1, 0));
             }
             ('-', _, 0) => {
-                queue.push_back((head.0, head.1 - 1, 0, -1));
-                queue.push_back((head.0, head.1 + 1, 0, 1));
+                queue.push_back(Step::new(head.x, head.y - 1, 0, -1));
+                queue.push_back(Step::new(head.x, head.y + 1, 0, 1));
             }
-            ('/', _, _) => queue.push_back((head.0 - dy, head.1 - dx, -dy, -dx)),
-            ('\\', _, _) => queue.push_back((head.0 + dy, head.1 + dx, dy, dx)),
-            _ => queue.push_back((head.0 + dx, head.1 + dy, dx, dy)),
+            _ => queue.push_back(Step::new(
+                x.wrapping_add_signed(dx),
+                y.wrapping_add_signed(dy),
+                dx,
+                dy,
+            )),
         }
     }
+
     seen.iter()
-        .map(|t| (t.0, t.1))
-        .collect::<HashSet<(isize, isize)>>()
+        .map(|step| (step.x, step.y))
+        .collect::<HashSet<(usize, usize)>>()
         .len() as u64
 }
 
@@ -51,26 +82,27 @@ pub fn run(filename: &str) -> u64 {
         .map(|row| row.chars().collect::<Vec<char>>())
         .collect();
 
-    max(
-        (0..grid.len())
-            .map(|idx| {
-                max(
-                    traverse(&grid, (idx as isize, 0 as isize, 0, 1)),
-                    traverse(&grid, (idx as isize, (grid[0].len() - 1) as isize, 0, -1)),
-                )
-            })
-            .max()
-            .unwrap(),
-        (0..grid[0].len())
-            .map(|idx| {
-                max(
-                    traverse(&grid, (0, idx as isize, 1, 0)),
-                    traverse(&grid, ((grid.len() - 1) as isize, idx as isize, -1, 0)),
-                )
-            })
-            .max()
-            .unwrap(),
-    )
+    let rows_max = (0..grid.len())
+        .map(|idx| {
+            max(
+                traverse(&grid, Step::new(idx, 0, 0, 1)),
+                traverse(&grid, Step::new(idx, grid[0].len() - 1, 0, -1)),
+            )
+        })
+        .max()
+        .unwrap();
+
+    let cols_max = (0..grid[0].len())
+        .map(|idx| {
+            max(
+                traverse(&grid, Step::new(0, idx, 1, 0)),
+                traverse(&grid, Step::new(grid.len() - 1, idx, -1, 0)),
+            )
+        })
+        .max()
+        .unwrap();
+
+    return max(cols_max, rows_max);
 }
 
 #[cfg(test)]
