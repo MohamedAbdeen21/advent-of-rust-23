@@ -1,21 +1,18 @@
 use core::panic;
 use std::collections::HashMap;
 
-use crate::tokenizer::tokens::{Token, TokenLiteral};
+use crate::tokenizer::tokens::{Token, TokenClass};
 
 #[derive(Debug)]
 pub struct Part {
-    pub attributes: HashMap<TokenLiteral, u64>,
+    pub attributes: HashMap<TokenClass, u64>,
 }
 
-fn create_flow(
-    attribute: TokenLiteral,
-    operator: TokenLiteral,
-    value: String,
-    then: String,
-) -> Box<dyn Fn(&Part) -> Option<String>> {
+type Rule = Box<dyn Fn(&Part) -> Option<String>>;
+
+fn create_rule(attribute: TokenClass, operator: TokenClass, value: String, then: String) -> Rule {
     match operator {
-        TokenLiteral::LT => {
+        TokenClass::LT => {
             return Box::new(move |part: &Part| {
                 println!("{:?} lt {:?}?", part.attributes[&attribute], value);
                 if part.attributes[&attribute] < value.parse().unwrap() {
@@ -25,7 +22,7 @@ fn create_flow(
                 }
             })
         }
-        TokenLiteral::GT => {
+        TokenClass::GT => {
             return Box::new(move |part: &Part| {
                 if part.attributes[&attribute] > value.parse().unwrap() {
                     Some(then.clone())
@@ -38,20 +35,20 @@ fn create_flow(
     }
 }
 
-fn create_terminal(value: String) -> Box<dyn Fn(&Part) -> Option<String>> {
+fn create_terminal(value: String) -> Rule {
     return Box::new(move |_: &Part| Some(value.clone()));
 }
 
-fn parse_stage(tokens: Vec<Token>) -> (String, Vec<Box<dyn Fn(&Part) -> Option<String>>>) {
-    if tokens[0].class != TokenLiteral::Stage {
+fn parse_stage(tokens: Vec<Token>) -> (String, Vec<Rule>) {
+    if tokens[0].class != TokenClass::Stage {
         panic!("first token should be a Stage Literal");
     }
 
-    if tokens[1].class != TokenLiteral::Lbracket {
+    if tokens[1].class != TokenClass::Lbracket {
         panic!("second token should be a Lbracket Literal");
     }
 
-    if tokens[tokens.len() - 1].class != TokenLiteral::Rbracket {
+    if tokens[tokens.len() - 1].class != TokenClass::Rbracket {
         panic!("Last token should be a Rbracket Literal")
     }
     let key = tokens[0].clone().value.unwrap();
@@ -61,30 +58,28 @@ fn parse_stage(tokens: Vec<Token>) -> (String, Vec<Box<dyn Fn(&Part) -> Option<S
     loop {
         let partition: Vec<Token> = iterator
             .by_ref()
-            .take_while(|x| x.class != TokenLiteral::Comma)
+            .take_while(|x| x.class != TokenClass::Comma)
             .cloned()
             .collect();
         if partition.len() == 0 {
             break;
         }
         match partition[1].class {
-            TokenLiteral::LT => {
-                fns.push(create_flow(
+            TokenClass::LT => {
+                fns.push(create_rule(
                     partition[0].class,
                     partition[1].class,
                     partition[2].clone().value.unwrap(),
                     partition[4].clone().value.unwrap(),
                 ));
             }
-            TokenLiteral::GT => fns.push(create_flow(
+            TokenClass::GT => fns.push(create_rule(
                 partition[0].class,
                 partition[1].class,
                 partition[2].clone().value.unwrap(),
                 partition[4].clone().value.unwrap(),
             )),
-            TokenLiteral::Rbracket => {
-                fns.push(create_terminal(partition[0].clone().value.unwrap()))
-            }
+            TokenClass::Rbracket => fns.push(create_terminal(partition[0].clone().value.unwrap())),
             s => panic!("wtf is {:?}", s),
         }
     }
@@ -96,14 +91,14 @@ fn parse_part(tokens: Vec<Token>) -> Part {
     if tokens.len() != 17 {
         panic!("Expected part tokens len to be 17");
     }
-    if tokens[0].class != TokenLiteral::Lbracket {
+    if tokens[0].class != TokenClass::Lbracket {
         panic!(
             "first token should be a Lbracket Literal, found {:?}",
             tokens[0].class
         );
     }
 
-    if tokens[tokens.len() - 1].class != TokenLiteral::Rbracket {
+    if tokens[tokens.len() - 1].class != TokenClass::Rbracket {
         panic!(
             "Last token should be a Rbracket Literal, found {:?}",
             tokens[tokens.len() - 1].class
@@ -114,7 +109,7 @@ fn parse_part(tokens: Vec<Token>) -> Part {
     loop {
         let partition: Vec<Token> = iterator
             .by_ref()
-            .take_while(|x| x.class != TokenLiteral::Comma)
+            .take_while(|x| x.class != TokenClass::Comma)
             .cloned()
             .collect();
         if partition.len() == 0 {
@@ -129,30 +124,25 @@ fn parse_part(tokens: Vec<Token>) -> Part {
 }
 
 // no need for an AST, we can just use maps
-pub fn parse(
-    tokens: Vec<Token>,
-) -> (
-    HashMap<String, Vec<Box<dyn Fn(&Part) -> Option<String>>>>,
-    Vec<Part>,
-) {
+pub fn parse(tokens: Vec<Token>) -> (HashMap<String, Vec<Rule>>, Vec<Part>) {
     let mut stages = HashMap::new();
     let mut parts = Vec::new();
     let mut iterator = tokens.iter();
     loop {
         let partition: Vec<Token> = iterator
             .by_ref()
-            .take_while(|x| x.class != TokenLiteral::EOL)
+            .take_while(|x| x.class != TokenClass::EOL)
             .cloned()
             .collect();
         if partition.len() == 0 {
             break;
         }
         match partition[0].class {
-            TokenLiteral::Stage => {
+            TokenClass::Stage => {
                 let (k, v) = parse_stage(partition);
                 stages.insert(k, v);
             }
-            TokenLiteral::Lbracket => parts.push(parse_part(partition)),
+            TokenClass::Lbracket => parts.push(parse_part(partition)),
             _ => panic!("Lines should only start with stage names or {{"),
         }
     }

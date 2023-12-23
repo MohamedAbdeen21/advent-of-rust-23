@@ -1,5 +1,5 @@
 #[derive(Eq, PartialEq, Hash, Clone, Debug, Copy)]
-pub enum TokenLiteral {
+pub enum TokenClass {
     EOL,
     Int,
 
@@ -25,12 +25,12 @@ pub enum TokenLiteral {
 
 #[derive(Clone, Debug)]
 pub struct Token {
-    pub class: TokenLiteral,
+    pub class: TokenClass,
     pub value: Option<String>, // only int and stage
 }
 
 impl Token {
-    pub fn new(class: TokenLiteral, symbols: Option<Vec<char>>) -> Token {
+    pub fn new(class: TokenClass, symbols: Option<Vec<char>>) -> Token {
         Token {
             class,
             value: symbols.and_then(|sym| Some(sym.iter().collect::<String>())),
