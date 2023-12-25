@@ -1,6 +1,7 @@
 use crate::state::State;
 use std::collections::{BinaryHeap, HashSet};
 use std::fs;
+use std::rc::Rc;
 
 fn dijkstra(grid: Vec<Vec<u8>>) -> (u64, State) {
     let mut queue: BinaryHeap<State> = BinaryHeap::new();
@@ -20,8 +21,9 @@ fn dijkstra(grid: Vec<Vec<u8>>) -> (u64, State) {
 
         seen.insert(node.hash());
 
+        let self_reference = Rc::new(node.clone());
         if node.steps < 10 && node.direction != (0, 0) {
-            let next = node.step();
+            let next = node.step(Rc::clone(&self_reference));
             if next.x < grid.len() && next.y < grid[0].len() {
                 queue.push(next.add_loss(grid[next.x][next.y]))
             }
@@ -35,7 +37,7 @@ fn dijkstra(grid: Vec<Vec<u8>>) -> (u64, State) {
             if node.direction == turn || node.direction == (-turn.0, -turn.1) {
                 continue;
             }
-            let next = node.turn(turn);
+            let next = node.turn(turn, Rc::clone(&self_reference));
             if next.x >= grid.len() || next.y >= grid[0].len() {
                 continue;
             }
@@ -61,14 +63,10 @@ pub fn run(filename: &str) -> u64 {
     let grid = parse(input);
     let (score, _node) = dijkstra(grid);
 
-    // let mut node = _node.clone();
-    // loop {
-    //     if let Some(parent) = node.parent {
-    //         println!("{}, {}, {}", parent.x, parent.y, parent.steps);
-    //         node = *parent;
-    //     } else {
-    //         break;
-    //     }
+    // let mut node = &_node;
+    // while let Some(parent) = &node.parent {
+    //     println!("{}, {}, {}", parent.x, parent.y, parent.steps);
+    //     node = parent;
     // }
 
     return score;
